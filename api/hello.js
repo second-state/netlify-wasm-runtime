@@ -3,7 +3,11 @@ const path = require('path');
 
 function _runWasm(reqBody) {
   return new Promise(resolve => {
-    const wasmedge = spawn(path.join(__dirname, 'wasmedge'), [path.join(__dirname, 'grayscale.so')]);
+    const wasmedge = spawn(
+      path.join(__dirname, 'wasmedge-tensorflow-lite'),
+      [path.join(__dirname, 'classify.so')],
+      {env: {'LD_LIBRARY_PATH': __dirname}}
+    );
 
     let d = [];
     wasmedge.stdout.on('data', (data) => {
@@ -11,8 +15,7 @@ function _runWasm(reqBody) {
     });
 
     wasmedge.on('close', (code) => {
-      let buf = Buffer.concat(d);
-      resolve(buf);
+      resolve(d.join(''));
     });
 
     wasmedge.stdin.write(reqBody);
@@ -24,9 +27,9 @@ exports.handler = async function(event, context) {
   var typedArray = new Uint8Array(event.body.match(/[\da-f]{2}/gi).map(function (h) {
     return parseInt(h, 16);
   }));
-  let buf = await _runWasm(typedArray);
+  let result = await _runWasm(typedArray);
   return {
     statusCode: 200,
-    body: buf.toString('hex')
+    body: result
   };
 }

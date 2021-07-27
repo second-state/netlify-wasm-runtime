@@ -6,13 +6,11 @@ This project is aimed to demonstrate how to implement a Serverless Functions wor
 
 The Serverless Functions endpoint is located at `api/hello.js` to meet the requirement of Netlify, but not to the Next.js. So if you want to develop on you local machine, you should put it into `pages/api/` and make some change.
 
-The only function in `api/hello.js` is grayscaling an image. It receives a png file and pass it as stdin stream to a spawned child process. The child process runs using the [WasmEdge](https://github.com/WasmEdge/WasmEdge) command.
+The only function in `api/hello.js` is classifying the object in a photo. It receives a jpg file and pass it as stdin stream to a spawned child process. The child process runs using the [wasmedge-tensorflow-lite](https://github.com/second-state/WasmEdge-tensorflow-tools) command.
 
-File `api/functions/image-grayscale/src/main.rs` implements the grayscaling logic. You can build it with the Rust `cargo` command with the `-target wasm32-wasi` option to get the `grayscale.wasm` file.
+File `api/functions/image-classification/src/main.rs` implements the tensorflow-based image recognition logic. You can build it with the Rust `cargo` command with the `-target wasm32-wasi --release` option to get the `classify.wasm` file.
 
-We define custom build in `api/pre.sh` which is called in package.json to download the [WasmEdge command](https://github.com/WasmEdge/WasmEdge/releases/tag/0.8.2). 
-
-![](/netlify-wasmedge-runtime.gif)
+We define custom build in `api/pre.sh` which is called in package.json to download the [WasmEdge command](https://github.com/WasmEdge/WasmEdge/releases/tag/0.8.2-rc.2).
 
 
 ## Learn More

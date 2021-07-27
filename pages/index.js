@@ -5,7 +5,7 @@ import styles from '../styles/Home.module.css'
 export default function Home() {
   const [enableWasm, setEnableWasm] = useState(false);
   const [origImg, setOrigImg] = useState(null);
-  const [resImg, setResImg] = useState(null);
+  const [res, setRes] = useState(null);
   const [loading, setLoading] = useState(false);
 
   return (
@@ -22,17 +22,13 @@ export default function Home() {
 
         <div className={styles.operating}>
           <div>
-            <input type="file" id="fileElem" accept="image/png" className={styles['visually-hidden']} onChange={fileSelected} />
-            <label htmlFor="fileElem" className={styles.noselect}>Select an image</label>
-            <div className={styles.thumb}>
-              {origImg && <img src={origImg.src} />}
-            </div>
+            <input type="file" id="fileElem" accept="image/jpeg" className={styles['visually-hidden']} onChange={fileSelected} />
+            <label htmlFor="fileElem" className={styles.noselect}>Select a photo</label>
+            <button id="runBtn" onClick={runWasm} disabled={!enableWasm || loading}>{loading ? 'Loading' : 'Classify with Wasm'}</button>
           </div>
-          <div>
-            <button id="runBtn" onClick={runWasm} disabled={!enableWasm || loading}>{loading ? 'Loading' : 'Run Wasm'}</button>
-            <div className={styles.thumb}>
-              {resImg && <img src={resImg.src} />}
-            </div>
+          <div className={styles['infer']} dangerouslySetInnerHTML={{__html: res}} />
+          <div className={styles.thumb}>
+            {origImg && <img src={origImg.src} />}
           </div>
         </div>
       </main>
@@ -55,8 +51,8 @@ export default function Home() {
       return;
     }
 
-    if (!file.type.startsWith('image/png')) {
-      alert('Please select a png image.');
+    if (!file.type.startsWith('image/jpeg')) {
+      alert('Please select a jpeg image.');
       return;
     }
 
@@ -69,31 +65,22 @@ export default function Home() {
         aImg.src = e.target.result;
         setOrigImg(aImg);
         setEnableWasm(true);
+        setRes('');
       };
     })(img);
     reader.readAsDataURL(file);
   }
 
   function runWasm(e) {
-    const img = document.createElement('img');
-
     const reader = new FileReader();
     reader.onload = function(e) {
       setLoading(true);
       var oReq = new XMLHttpRequest();
       oReq.open("POST", '/.netlify/functions/hello', true);
-      oReq.onload = (function(bImg) {
-        return function (oEvent) {
+      oReq.onload = function() {
           setLoading(false);
-          const typedArray = new Uint8Array(oReq.response.match(/[\da-f]{2}/gi).map(function (h) {
-            return parseInt(h, 16);
-          }));
-          const b = new Blob([typedArray.buffer], {type: 'image/png'});
-          bImg.src = URL.createObjectURL(b);
-          setResImg(bImg);
-          URL.revokeObjectURL(b);
-        };
-      })(img);
+          setRes(oReq.response);
+      };
       oReq.send(buf2hex(e.target.result));
     };
     reader.readAsArrayBuffer(origImg.file);
